@@ -1,0 +1,14 @@
+name: 翻译助手
+id: translator
+version: 1.0.0
+description: 多语言翻译工具，支持中、英、日、韩、法、德、西班牙文
+author: AICP Team
+category: 工具
+tags:
+  - translate
+  - ai
+auto_start: false
+menu:
+  label: 翻译助手
+  items:
+    - { label: 打开, action: open_web, url: /translator/index.html, receiver: applications/translator/chat }
