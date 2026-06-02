@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>翻译助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #fafafa;
+            color: #1a1a1a;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .lang-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 16px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            border-color: #1a1a1a;
+        }
+
+        .button-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        button {
+            padding: 10px 24px;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-area {
+            margin-top: 24px;
+        }
+
+        .result-label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .result-box {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .error {
+            color: #e5484d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 翻译助手</h1>
+        <div class="subtitle">多语言翻译工具</div>
+
+        <div class="card">
+            <div class="lang-bar">
+                <select id="targetLang">
+                    <option value="中文">中文</option>
+                    <option value="英文">英文</option>
+                    <option value="日文">日文</option>
+                    <option value="韩文">韩文</option>
+                    <option value="法文">法文</option>
+                    <option value="德文">德文</option>
+                    <option value="西班牙文">西班牙文</option>
+                </select>
+            </div>
+
+            <textarea id="sourceText" placeholder="请输入要翻译的文本..."></textarea>
+
+            <div class="button-bar">
+                <button id="translateBtn">翻译</button>
+                <button id="clearBtn">清空</button>
+            </div>
+
+            <div class="result-area" id="resultArea" style="display: none;">
+                <div class="result-label">翻译结果</div>
+                <div class="result-box" id="resultText"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/applications/{project}/chat';
+
+        const translateBtn = document.getElementById('translateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const sourceText = document.getElementById('sourceText');
+        const targetLang = document.getElementById('targetLang');
+        const resultArea = document.getElementById('resultArea');
+        const resultText = document.getElementById('resultText');
+
+        translateBtn.onclick = async () => {
+            const text = sourceText.value.trim();
+            if (!text) {
+                alert('请输入文本');
+                return;
+            }
+
+            translateBtn.disabled = true;
+            translateBtn.textContent = '翻译中...';
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'translate',
+                        text: text,
+                        target_lang: targetLang.value
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    resultText.innerHTML = `<span class="error">${escapeHtml(data.error)}</span>`;
+                } else {
+                    resultText.innerHTML = escapeHtml(data.translated || '无结果');
+                }
+
+                resultArea.style.display = 'block';
+
+            } catch (e) {
+                resultText.innerHTML = `<span class="error">请求失败: ${e.message}</span>`;
+                resultArea.style.display = 'block';
+            } finally {
+                translateBtn.disabled = false;
+                translateBtn.textContent = '翻译';
+            }
+        };
+
+        clearBtn.onclick = () => {
+            sourceText.value = '';
+            resultArea.style.display = 'none';
+        };
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
